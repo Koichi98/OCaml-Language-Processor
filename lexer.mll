@@ -13,21 +13,18 @@ rule main = parse
 | "<"          { Parser.LT }
 | "let"        { Parser.LET }
 | "rec"        { Parser.REC }
-| "and"        { Parser.AND } 
 | "in"         { Parser.IN }
-| "&&"         { Parser.BAND}
-| "||"         { Parser.BOR}
 | "if"         { Parser.IF }
-| "not"        { Parser.NOT}
 | "then"       { Parser.THEN }
 | "else"       { Parser.ELSE }
 | "true"       { Parser.BOOL (true) }
 | "false"      { Parser.BOOL (false) }
-| ")"          { Parser.RPAR }
 | "("          { Parser.LPAR }
-| ";;"         { Parser.SEMISEMI }
-| "fun"        { Parser.FUN }
+| ")"          { Parser.RPAR }
+| "fun"        { Parser.FUN}
 | "->"         { Parser.ARROW }
+| ";;"         { Parser.SEMISEMI }
 | digit+ as n  { Parser.INT (int_of_string n) }
 | ident  as id { Parser.ID id }
-| _            { Parser.ERROR}
+| _            { failwith ("Unknown Token: " ^ Lexing.lexeme lexbuf)}
+

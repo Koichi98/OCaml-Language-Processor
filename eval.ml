@@ -2,19 +2,10 @@ open Syntax
 
 exception Unbound
 
-(*type env = (name * value) list*)
+type env = (name * value) list
 
 let empty_env = []
 let extend x v env = (x,v)::env
-
-let rec fun_i i ls = 
-  let x::xs = ls in
-  if i=1 then x else fun_i (i-1) xs
-
-let rec extend_list i ls rest env=
-  match rest with
-|[] -> env
-|(f,x,e)::xs -> (f,VRecFun(i,ls,env))::(extend_list (i+1) ls xs env)
 
 let rec lookup x env =
   try List.assoc x env with Not_found -> raise Unbound
@@ -56,18 +47,6 @@ let rec eval_expr env e =
   (match v1, v2 with
   |VInt i1, VInt i2 -> VInt (i1/i2)
   |_ -> Printf.printf "Exception: EvalError DIVISION";raise EvalErr)
-|EOr (e1,e2) ->(*論理和を定義*)
-  let v1 = eval_expr env e1 in
-  let v2 = eval_expr env e2 in
-  (match v1, v2 with
-  |VBool b1, VBool b2 ->VBool (b1||b2)
-  |_ -> Printf.printf "Exception: EvalError OR";raise EvalErr)
-|EAnd (e1,e2) ->(*論理積を定義*)
-  let v1 = eval_expr env e1 in
-  let v2 = eval_expr env e2 in
-  (match v1, v2 with
-  |VBool b1, VBool b2 ->VBool (b1&&b2)
-  |_ -> Printf.printf "Exception: EvalError AND";raise EvalErr)
 | EEq (e1,e2) ->
   let v1 = eval_expr env e1 in
   let v2 = eval_expr env e2 in
@@ -88,37 +67,20 @@ let rec eval_expr env e =
     | _ -> Printf.printf "Exception: EvalError IF";raise EvalErr)
 | ELet (n,e1,e2) -> (*更新したenvのもとでe2を評価する*)
     eval_expr ((n, eval_expr env e1)::env) e2
-| ENot e ->  (*否定演算子の評価*)
-    (match eval_expr env e with
-    |VBool b -> VBool (not b)
-    |_ -> Printf.printf "Exception: EvalError NOT";raise EvalErr)
-| EFun (n,e) -> VFun (n,e,env) (*関数をクロージャとしてvalue型に変換*)
-| EApp (e1,e2)-> (*関数の適用*)
+| EFun(x,e) -> VFun(x,e,ref env)
+| EApp (e1,e2) -> 
   let v1 = eval_expr env e1 in
-  let v2 = eval_expr env e2 in
-  (match v1 with
-    |VFun(x,e,oenv)->
-       eval_expr (extend x v2 oenv) e
-    |VRecFun (i,ls,oenv) -> 
-      let (f,x,e) = fun_i i ls in
-        let env' = extend x v2 (extend_list 1 ls ls oenv) in 
-        eval_expr env' e
+  let v2 = eval_expr env e2 in 
+  (match v1 with 
+  |VFun(x,e,oenv)-> 
+  eval_expr (extend x v2 (!oenv)) e)
+| ELetRec (f,x,e1,e2) ->
+    let oenv = ref [] in
+    let v = VFun(x, e1, oenv) in
+    (oenv := extend f v env;
+    eval_expr (extend f v env) e2)
 
-    |_ -> Printf.printf "Exception: EvalError FUNCTION APPLY ";raise EvalErr)
-| ELetRec (ls,e) ->
-    let env' = 
-      extend_list 1 ls ls env
-    in eval_expr env' e 
-    
-    (*|VRecFun (f,x,e,oenv) -> 
-      let env' =
-        extend x v2 (extend f (VRecFun(f,x,e,oenv)) oenv) 
-        in eval_expr env' e*)
-(*| ELetRec (f,x,e1,e2)-> (*再帰関数クロージャの環境に追加して評価*)
-    let env' = 
-      extend f (VRecFun(f,x,e1,env)) env
-      in 
-      eval_expr env' e2*)
+
 let eval_expr_with_exp env e = (*EvalErrが起きたときにそれを拾う関数*)
   try 
     eval_expr env e
@@ -135,9 +97,11 @@ let rec eval_command env c =
   | CDecl (n,e) ->  (*入力がトップレベル定義だった場合*)
   (match eval_expr_with_exp env e with 
     |VErr a -> (a , env, VErr a)
+    |VFun(x,e,oenv) -> ("val",extend n (VFun(x,e,oenv)) env,VFun(n,e,oenv))
     |value -> ("val", extend n value env,value))
-  (*| CRecDecl (f,x,e) -> ("val", extend f (VRecFun(f,x,e,env)) env,(VRecFun(f,x,e,env))) (*再帰関数クロージャを環境追加して関数を定義*)*)
-  | CRecDecl ls -> ("val", extend_list 1 ls ls env, VRecFun(0,ls,env)) (*再帰関数クロージャを環境追加して関数を定義*)
-  | PLErr -> Printf.printf "Exception: Parse or Lex Error";("Error" , env, VErr "Error")
+  | CRecDecl (f,x,e) ->  let oenv = ref [] in
+                            let v = VFun(x,e,oenv) in
+                              (oenv:= extend f v env;("val",extend f v env,VFun(f,e,oenv)))
 
- 
+
+  

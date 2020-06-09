@@ -6,12 +6,10 @@ let rec read_eval_print env =
   flush stdout;
   let cmd = Parser.toplevel Lexer.main (Lexing.from_channel stdin) in
   let (id, newenv, v) = eval_command env cmd in
-    if (id = "Error") then (print_newline ();read_eval_print newenv) (*idが"Error"の場合には改行して次の入力を待つ*)
-    else
-    (Printf.printf "%s = " id;
-    print_value v;
-    print_newline ();
-    read_eval_print newenv)
+  (Printf.printf "%s = " id;
+   print_value v;
+   print_newline ();
+   read_eval_print newenv)
 
 let initial_env =
   extend "i" (VInt 1)
