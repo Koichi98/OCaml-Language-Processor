@@ -12,18 +12,22 @@ rule main = parse
 | "="          { Parser.EQ }
 | "<"          { Parser.LT }
 | "let"        { Parser.LET }
+| "rec"        { Parser.REC }
+| "and"        { Parser.AND } 
 | "in"         { Parser.IN }
-| "&&"         { Parser.AND}
-| "||"         { Parser.OR}
+| "&&"         { Parser.BAND}
+| "||"         { Parser.BOR}
 | "if"         { Parser.IF }
 | "not"        { Parser.NOT}
 | "then"       { Parser.THEN }
 | "else"       { Parser.ELSE }
 | "true"       { Parser.BOOL (true) }
 | "false"      { Parser.BOOL (false) }
-| "("          { Parser.LPAR }
 | ")"          { Parser.RPAR }
+| "("          { Parser.LPAR }
 | ";;"         { Parser.SEMISEMI }
+| "fun"        { Parser.FUN }
+| "->"         { Parser.ARROW }
 | digit+ as n  { Parser.INT (int_of_string n) }
 | ident  as id { Parser.ID id }
 | _            { Parser.ERROR}

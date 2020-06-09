@@ -1,10 +1,5 @@
 type name = string 
 
-type value =
-  | VInt  of int
-  | VBool of bool 
-  | VErr of string      (*エラー処理用のvalue型*)
-
 type expr =
   | EConstInt  of int
   | EConstBool of bool
@@ -20,12 +15,25 @@ type expr =
   | EIf        of expr * expr * expr
   | ELet       of name * expr * expr
   | ENot       of expr
-  | EAnoDecl   of expr * name * expr
+  | EFun       of name * expr
+  | EApp       of expr * expr
+  | ELetRec    of (name * name * expr) list * expr
+
+
+type value =
+  | VInt  of int
+  | VBool of bool 
+  | VErr of string      (*エラー処理用のvalue型*)
+  | VFun  of name * expr * env 
+  | VRecFun of int * (name * name * expr) list * env
+  and 
+   env = (name * value) list
 
 type command =
   | CExp of expr
   | CDecl of name * expr
   | PLErr
+  | CRecDecl of (name * name * expr) list 
 				  
 let print_name = print_string 
 
@@ -33,6 +41,8 @@ let print_value v =
   match v with
   | VInt i  -> print_int i
   | VBool b -> print_string (string_of_bool b)
+  | VFun (n,e,env) -> Printf.printf "<fun>" 
+  | VRecFun (n,e,env) -> Printf.printf "<fun>" 
 
 (*
  小さい式に対しては以下でも問題はないが，

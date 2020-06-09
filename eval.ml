@@ -2,10 +2,19 @@ open Syntax
 
 exception Unbound
 
-type env = (name * value) list
+(*type env = (name * value) list*)
 
 let empty_env = []
 let extend x v env = (x,v)::env
+
+let rec fun_i i ls = 
+  let x::xs = ls in
+  if i=1 then x else fun_i (i-1) xs
+
+let rec extend_list i ls rest env=
+  match rest with
+|[] -> env
+|(f,x,e)::xs -> (f,VRecFun(i,ls,env))::(extend_list (i+1) ls xs env)
 
 let rec lookup x env =
   try List.assoc x env with Not_found -> raise Unbound
@@ -83,46 +92,52 @@ let rec eval_expr env e =
     (match eval_expr env e with
     |VBool b -> VBool (not b)
     |_ -> Printf.printf "Exception: EvalError NOT";raise EvalErr)
-  
+| EFun (n,e) -> VFun (n,e,env) (*関数をクロージャとしてvalue型に変換*)
+| EApp (e1,e2)-> (*関数の適用*)
+  let v1 = eval_expr env e1 in
+  let v2 = eval_expr env e2 in
+  (match v1 with
+    |VFun(x,e,oenv)->
+       eval_expr (extend x v2 oenv) e
+    |VRecFun (i,ls,oenv) -> 
+      let (f,x,e) = fun_i i ls in
+        let env' = extend x v2 (extend_list 1 ls ls oenv) in 
+        eval_expr env' e
 
-let eval_expr_with_err env e = (*EvalErrが起きたときにそれを拾う関数*)
+    |_ -> Printf.printf "Exception: EvalError FUNCTION APPLY ";raise EvalErr)
+| ELetRec (ls,e) ->
+    let env' = 
+      extend_list 1 ls ls env
+    in eval_expr env' e 
+    
+    (*|VRecFun (f,x,e,oenv) -> 
+      let env' =
+        extend x v2 (extend f (VRecFun(f,x,e,oenv)) oenv) 
+        in eval_expr env' e*)
+(*| ELetRec (f,x,e1,e2)-> (*再帰関数クロージャの環境に追加して評価*)
+    let env' = 
+      extend f (VRecFun(f,x,e1,env)) env
+      in 
+      eval_expr env' e2*)
+let eval_expr_with_exp env e = (*EvalErrが起きたときにそれを拾う関数*)
   try 
     eval_expr env e
     with 
      | EvalErr -> VErr "Error"
 
 
-let rec declare n e env =  (*連続での宣言に対応した関数*)
-match e with 
-| EAnoDecl (e1,newname,e2) ->
-  (match eval_expr_with_err env e1 with 
-  | VErr a-> raise EvalErr
-  | VInt i -> Printf.printf "val %s : int = " n;print_int i;print_newline ();declare newname e2 (extend n (VInt i) env)
-  | VBool b -> Printf.printf "val %s : bool = " n;print_string (string_of_bool b);print_newline ();declare newname e2 (extend n (VBool b) env))
-| _ -> 
-  match eval_expr_with_err env e with 
-  | VErr a -> raise EvalErr 
-  | VInt i -> Printf.printf "val %s : int = " n;print_int i;extend n (VInt i) env
-  | VBool b -> Printf.printf "val %s : bool = " n;print_string (string_of_bool b);extend n (VBool b) env
-
-
-let declare_with_err n e env = (*EvalErrが起きたときにそれを拾う関数*)
-  try 
-    declare n e env
-    with 
-      EvalErr -> [("Error", VInt 0)] (*正常に動いたとき(name,value)のリストを返すので,エラーの場合も合わせる.*)
-
-
 let rec eval_command env c =
   match c with
   | CExp e -> 
-  (match eval_expr_with_err env e with 
+  (match eval_expr_with_exp env e with 
     |VErr a -> (a , env, VErr a) (*返り値の不一致によるエラーを防ぐため(string,env,value)の三つ組みを返している*)
     |value -> ("-", env,value))
   | CDecl (n,e) ->  (*入力がトップレベル定義だった場合*)
-  (match declare_with_err n e env with
-    |[("Error",VInt 0)] -> ("Error", env, VErr "Error") (*返り値の不一致によるエラーを防ぐため(string,env,value)の三つ組みを返している*)
-    |env -> ("val",env,VInt 0))
-  | PLErr -> Printf.printf "Exception: Parse/Lex Error";("Error" , env, VErr "Error")
+  (match eval_expr_with_exp env e with 
+    |VErr a -> (a , env, VErr a)
+    |value -> ("val", extend n value env,value))
+  (*| CRecDecl (f,x,e) -> ("val", extend f (VRecFun(f,x,e,env)) env,(VRecFun(f,x,e,env))) (*再帰関数クロージャを環境追加して関数を定義*)*)
+  | CRecDecl ls -> ("val", extend_list 1 ls ls env, VRecFun(0,ls,env)) (*再帰関数クロージャを環境追加して関数を定義*)
+  | PLErr -> Printf.printf "Exception: Parse or Lex Error";("Error" , env, VErr "Error")
 
-  
+ 
