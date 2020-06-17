@@ -1,5 +1,6 @@
 open Syntax
 
+
 exception Unbound
 
 (*type env = (name * value) list*)
@@ -140,4 +141,17 @@ let rec eval_command env c =
   | CRecDecl ls -> ("val", extend_list 1 ls ls env, VRecFun(0,ls,env)) (*再帰関数クロージャを環境追加して関数を定義*)
   | PLErr -> Printf.printf "Exception: Parse or Lex Error";("Error" , env, VErr "Error")
 
- 
+
+(*)  |CDecl (n,e) -> infer_expr 
+  |CRecDecl *)
+
+
+
+    
+    
+
+(*let rec infer_cmd cmd =*)
+
+(*let subst3 = unify [((TyVar alpha),(TyFun((TyVar t),(TyVar beta))));((TyVar alpha'),(TyFun((TyVar alpha''),(TyVar t))))]
+print_type (TyFun ((ty_subst subst3 (TyVar alpha)),(TyFun ((ty_subst subst3 (TyVar alpha')),(TyFun ((ty_subst subst3 (TyVar alpha'')),(ty_subst subst3 (TyVar beta))))))))
+print_type (TyFun((ty_subst subst3 (TyVar alpha)),(ty_subst subst3 (TyVar beta))))*)

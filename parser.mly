@@ -1,7 +1,7 @@
 %{
   open Syntax
   let parse_error msg = Printf.eprintf "%s\n" msg
-  (* ここに書いたものは，ExampleParser.mliに入らないので注意 *)
+  (* ここに書いたものは，ExampleParser.mliに入らない *)
   
 %}
 
@@ -74,5 +74,4 @@ atomic_expr:
 var:
   | ID { $1 }
 ;
-
 

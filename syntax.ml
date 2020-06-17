@@ -41,15 +41,9 @@ let print_value v =
   match v with
   | VInt i  -> print_int i
   | VBool b -> print_string (string_of_bool b)
-  | VFun (n,e,env) -> Printf.printf "<fun>" 
-  | VRecFun (n,e,env) -> Printf.printf "<fun>" 
+  | VFun (n,e,env) -> Printf.printf " = <fun>" 
+  | VRecFun (n,e,env) -> Printf.printf " = <fun>" 
 
-(*
- 小さい式に対しては以下でも問題はないが，
- 大きいサイズの式を見やすく表示したければ，Formatモジュール
-   http://caml.inria.fr/pub/docs/manual-ocaml/libref/Format.html
- を活用すること
-*)
 (*let rec print_expr e =
   match e with
   | EConstInt i ->
