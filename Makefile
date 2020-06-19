@@ -1,4 +1,4 @@
-SOURCES = syntax.ml lexer.mll parser.mly tySyntax.ml constraintSolver.ml infer.ml eval.ml main.ml 
+SOURCES = syntax.ml lexer.mll parser.mly tySyntax.ml constraintSolver.ml polymorphism.ml infer.ml eval.ml main.ml 
 RESULT  = main
 
 YFLAGS = -v 

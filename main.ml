@@ -10,9 +10,9 @@ let rec read_eval_print env tyenv=
   let (id, newenv, v) = eval_command env cmd in
     if (id = "Error") then (print_newline ();read_eval_print newenv newtyenv) (*idが"Error"の場合には改行して次の入力を待つ*)
     else
-    print_newline ();
     (Printf.printf "%s :" id;
     TySyntax.print_type t;
+    print_newline ();
     print_value v;
     print_newline ();
     read_eval_print newenv newtyenv)

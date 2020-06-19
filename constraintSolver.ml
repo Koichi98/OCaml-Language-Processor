@@ -2,7 +2,7 @@ open TySyntax
 exception TyError
 
 type subst = (tyvar * ty) list
-type constraints = (TySyntax.ty * TySyntax.ty) list
+type constraints = (ty * ty) list
 
 
 
