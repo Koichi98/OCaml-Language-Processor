@@ -5,6 +5,9 @@ type ty =
   | TyBool
   | TyFun of ty * ty
   | TyVar of tyvar
+  | TyPair of ty * ty
+  | TyNil
+  | TyCons of ty 
 
 type tyscheme = tyvar list * ty (*束縛変数のリストとその変数名に対応する型の組*)
 
@@ -19,6 +22,10 @@ let rec print_type t = (*型を出力する*)
   |TyBool -> Printf.printf " bool"
   |TyFun(ty1,ty2) -> print_type ty1;Printf.printf " ->";print_type ty2
   |TyVar tyv -> let Alpha i = tyv in Printf.printf " 'a";print_int i
+  |TyPair(ty1,ty2) -> print_type ty1;Printf.printf " *";print_type ty2
+  |TyNil -> Printf.printf "list"
+  |TyCons ty -> print_type ty;Printf.printf " list"
+
 
 let rec print_type_list ls= (*デバッグ用,生成された型制約の出力*)
   match ls with
@@ -35,3 +42,4 @@ let rec print_tyv_list ls= (*型変数を出力する関数*)
   |[] -> Printf.printf "[]";()
   |x::xs -> 
     let Alpha i = x in print_int i; Printf.printf ";"
+    

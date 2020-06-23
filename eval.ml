@@ -1,4 +1,5 @@
 open Syntax
+open Match
 
 
 exception Unbound
@@ -104,13 +105,31 @@ let rec eval_expr env e =
       let (f,x,e) = fun_i i ls in
         let env' = extend x v2 (extend_list 1 ls ls oenv) in 
         eval_expr env' e
-
     |_ -> Printf.printf "Exception: EvalError FUNCTION APPLY ";raise EvalErr)
 | ELetRec (ls,e) ->
     let env' = 
       extend_list 1 ls ls env
     in eval_expr env' e 
-    
+| EPair (e1,e2) -> (*組型への拡張*)
+  let v1 = eval_expr env e1 in
+  let v2 = eval_expr env e2 in
+  VPair(v1,v2)
+| ENil -> VNil (*空リスト*)
+| ECons (e1,e2) -> 
+  let v1 = eval_expr env e1 in
+  VCons (v1,(eval_expr env e2))
+| EMatch (e,p_list) -> 
+  (find_match_sub p_list (eval_expr env e) env)
+and  
+find_match_sub p_list value env =
+  match p_list with 
+  |[] -> Printf.printf "Exception: EvalError PATTERN MATCH";raise EvalErr
+  |(p,e)::rest -> 
+    (match find_match p value with
+    |None -> find_match_sub rest value env
+    |Some ls -> eval_expr (ls@env) e)
+
+
     (*|VRecFun (f,x,e,oenv) -> 
       let env' =
         extend x v2 (extend f (VRecFun(f,x,e,oenv)) oenv) 

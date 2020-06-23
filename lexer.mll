@@ -25,6 +25,13 @@ rule main = parse
 | "false"      { Parser.BOOL (false) }
 | ")"          { Parser.RPAR }
 | "("          { Parser.LPAR }
+| "["          { Parser.LBRACKET }
+| "]"          { Parser.RBRACKET }
+| "::"         { Parser.CONS }
+| ","          { Parser.COMMA }
+| "match"      { Parser.MATCH }
+| "with"       { Parser.WITH }
+| "|"          { Parser.BAR }
 | ";;"         { Parser.SEMISEMI }
 | "fun"        { Parser.FUN }
 | "->"         { Parser.ARROW }

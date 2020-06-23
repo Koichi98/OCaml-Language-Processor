@@ -7,6 +7,27 @@ type tyenv = (name*tyscheme) list (*型スキームを用いた型環境*)
 
 exception Unbound
 
+let rec pattern_type p =
+    match p with 
+    |PInt i-> (TyInt,[],[])
+    |PBool b-> (TyBool,[],[])
+    |PVar x-> 
+    let alpha = new_tyvar () in
+    ((TyVar alpha),[],[(x,([],(TyVar alpha)))])
+    |PPair(p1,p2) -> 
+    let (t1,c1,gamma1) =  pattern_type p1 in 
+    let (t2,c2,gamma2) =  pattern_type p2 in 
+    ((TyPair(t1,t2)),c1@c2,gamma1@gamma2)
+    |PNil ->
+    let alpha = new_tyvar () in
+    ((TyCons (TyVar alpha)),[],[])
+    |PCons(p1,p2) ->
+    let (t1,c1,gamma1) =  pattern_type p1 in 
+    let (t2,c2,gamma2) =  pattern_type p2 in 
+    let alpha = new_tyvar () in
+    ((TyCons (TyVar alpha)),[((TyVar alpha),t1);(TyCons (TyVar alpha)),t2]@c1@c2,gamma1@gamma2)
+
+
 let rec lookup x env =
   try List.assoc x env with Not_found -> raise Unbound
 
@@ -84,6 +105,33 @@ let rec infer_expr tyenv expr = (*型制約を生成する*)
     let (p,t) = generalize delta s1 in
     let (t2,c2) = infer_expr ((f,(p,t))::tyenv) e2 in
     (t2,[(t1,(TyVar beta))]@c1@c2)
+  |EPair(e1,e2) ->
+    let (t1,c1) = infer_expr tyenv e1 in 
+    let (t2,c2) = infer_expr tyenv e2 in 
+    (TyPair(t1,t2),c1@c2)
+  |ENil -> (TyNil,[])
+  |ECons(e1,e2) ->
+    let (t1,c1) = infer_expr tyenv e1 in 
+    let (t2,c2) = infer_expr tyenv e2 in
+    (if t2 = TyNil then 
+    (TyCons t1,c1@c2)
+    else 
+      let TyCons t2'= t2 in
+      (TyCons t1,[(t1,t2')]@c1@c2))
+  |EMatch(e,p_list) ->
+    let (t,c) = infer_expr tyenv e in 
+    let alpha = new_tyvar () in
+    let (t_list,constraints) = pattern_type_list t alpha p_list tyenv [] in
+    (TyVar alpha,constraints@c)
+and 
+  pattern_type_list t alpha p_list tyenv constraints= 
+  match p_list with
+  |[] -> ((TyVar alpha),constraints)
+  |(pi,ei)::rest ->
+    let (ti,ci,gammai) = pattern_type pi in 
+    let (ti',ci') = infer_expr (gammai@tyenv) ei in 
+    pattern_type_list t alpha rest tyenv ([(t,ti);((TyVar alpha),ti')]@ci@ci'@constraints)
+   
 
 let infer_cmd tyenv cmd = (*infer_exprで得た型制約から,unifyを用いて型推論を実際におこなう*)
   match cmd with

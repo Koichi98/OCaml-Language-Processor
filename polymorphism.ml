@@ -16,8 +16,15 @@ let rec sub_get_type_vars ty tyv_ls =
         (sub_get_type_vars ty2 newtyv_ls)@newtyv_ls
     |TyVar tyv -> 
       update_tyvls tyv tyv_ls tyv_ls
+    |TyPair (ty1,ty2) ->
+      let newtyv_ls = sub_get_type_vars ty1 tyv_ls in
+        (sub_get_type_vars ty2 newtyv_ls)@newtyv_ls
+    |TyNil -> tyv_ls
+    |TyCons ty ->
+      sub_get_type_vars ty tyv_ls
 
-let get_type_vars ty = (*型に現れている型変数をすべてリストに列挙くする*)
+
+let get_type_vars ty = (*型に現れている型変数をすべてリストに列挙する*)
   sub_get_type_vars ty []
 
 
@@ -47,7 +54,7 @@ let rec sub2_generalize tyv tyenv =
   match tyenv with
   |[] -> false
   |(n,(ls,t))::rest -> 
-    let tyv_ls = get_type_vars t in (*怪しい*)
+    let tyv_ls = get_type_vars t in 
     if sub3_generalize tyv tyv_ls then true (*trueがきたらtrueを返す*)
     else sub2_generalize tyv rest  (*falseが来たら型環境のリストの残りを確認する*)
   
@@ -58,7 +65,7 @@ let rec sub_generalize ls tyenv =
     if sub2_generalize tyv tyenv then sub_generalize rest tyenv (*trueがきたらtyvを削除してループ*)
     else tyv::(sub_generalize rest tyenv)(*falseが来たら型環境に含まれていないので,リストに追加*)
 
-let rec generalize tyenv ty= (*一般化する関数,型環境にある型それぞれに含まれず、tyに含まれるものをリスト化し、tyとのペアにして返す*)
+let rec generalize tyenv ty= (*一般化する関数:型環境にある型それぞれに含まれず、tyに含まれるものをリスト化し、tyとのペアにして返す*)
   let ls = get_type_vars ty in
   (sub_generalize ls tyenv,ty)
   (*(sub_generalize tyenv [],ty)*)

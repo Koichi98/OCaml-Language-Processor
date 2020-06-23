@@ -12,7 +12,7 @@ let rec read_eval_print env tyenv=
     else
     (Printf.printf "%s :" id;
     TySyntax.print_type t;
-    print_newline ();
+    Printf.printf " = " ;
     print_value v;
     print_newline ();
     read_eval_print newenv newtyenv)

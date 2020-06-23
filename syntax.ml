@@ -1,5 +1,15 @@
 type name = string 
 
+type pattern =
+  | PInt  of int
+  | PBool of bool
+  | PVar  of name
+  | PPair of pattern * pattern
+  | PNil
+  | PCons of pattern * pattern
+
+type 'a option = Some of 'a list | None
+
 type expr =
   | EConstInt  of int
   | EConstBool of bool
@@ -18,7 +28,10 @@ type expr =
   | EFun       of name * expr
   | EApp       of expr * expr
   | ELetRec    of (name * name * expr) list * expr
-
+  | EPair      of expr * expr
+  | ENil
+  | ECons      of expr * expr
+  | EMatch     of expr * (pattern * expr) list
 
 type value =
   | VInt  of int
@@ -26,6 +39,9 @@ type value =
   | VErr of string      (*エラー処理用のvalue型*)
   | VFun  of name * expr * env 
   | VRecFun of int * (name * name * expr) list * env
+  | VPair of value * value
+  | VNil
+  | VCons of value * value
   and 
    env = (name * value) list
 
@@ -37,12 +53,23 @@ type command =
 				  
 let print_name = print_string 
 
-let print_value v =
+
+let rec print_value v =
   match v with
   | VInt i  -> print_int i
   | VBool b -> print_string (string_of_bool b)
-  | VFun (n,e,env) -> Printf.printf " = <fun>" 
-  | VRecFun (n,e,env) -> Printf.printf " = <fun>" 
+  | VFun (n,e,env) -> Printf.printf " <fun>" 
+  | VRecFun (n,e,env) -> Printf.printf " <fun>" 
+  | VPair(v1,v2) -> Printf.printf "(";print_value v1;Printf.printf "," ;print_value v2;Printf.printf ")" 
+  | VNil -> Printf.printf "[]";
+  | VCons(v1,v2) -> Printf.printf "[";print_value v1;print_list v2
+  and 
+print_list v = 
+   match v with
+   | VNil -> Printf.printf "]";
+   | VCons(v1,v2) -> Printf.printf "; ";print_value v1;print_list v2 
+
+
 
 (*let rec print_expr e =
   match e with
