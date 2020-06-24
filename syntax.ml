@@ -37,13 +37,14 @@ type value =
   | VInt  of int
   | VBool of bool 
   | VErr of string      (*エラー処理用のvalue型*)
-  | VFun  of name * expr * env 
-  | VRecFun of int * (name * name * expr) list * env
+  | VFun  of name* expr * env ref
   | VPair of value * value
   | VNil
   | VCons of value * value
   and 
-   env = (name * value) list
+   env = (name * thunk) list
+  and 
+   thunk = Thunk of expr * env ref
 
 type command =
   | CExp of expr
@@ -59,7 +60,6 @@ let rec print_value v =
   | VInt i  -> print_int i
   | VBool b -> print_string (string_of_bool b)
   | VFun (n,e,env) -> Printf.printf " <fun>" 
-  | VRecFun (n,e,env) -> Printf.printf " <fun>" 
   | VPair(v1,v2) -> Printf.printf "(";print_value v1;Printf.printf "," ;print_value v2;Printf.printf ")" 
   | VNil -> Printf.printf "[]";
   | VCons(v1,v2) -> Printf.printf "[";print_value v1;print_list v2
